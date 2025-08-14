@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mòpyon - Paj Konpoze</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sergi+Trendy&display=swap" rel="stylesheet">
+  
+<link rel="stylesheet" href="style.css">
+
+<!-- Firebase SDK version 8 (plus stable) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  // Ta configuration Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpylenTapoLXwbMsEavlLt0po5M_bVDBo",
+    authDomain: "mopyonsiteweb.firebaseapp.com",
+    databaseURL: "https://mopyonsiteweb-default-rtdb.firebaseio.com/",
+    projectId: "mopyonsiteweb",
+    storageBucket: "mopyonsiteweb.firebasestorage.app",
+    messagingSenderId: "535172052074",
+    appId: "1:535172052074:web:c30cefea18ffed7a27c613",
+    measurementId: "G-CLYT5CXJ79"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  // Initialisation de Firestore (version 8)
+const db = firebase.firestore();
+const database = firebase.database();
+  </script>
+  
+  <script src="main.js"></script>
+  
+  <script src="firebase-realtime.js"></script>
+
+</head>
+<body>
+
+  <!-- Page 1 -->
+  <div id="home">
+    <h1>MÒPYON</h1>
+    <p class="slogan">Jwe ak pwòp fòs ou<br>pou w fè lajan</p>
+    <button class="button" onclick="showPage('antre')">ANTRE</button>
+  </div>
+
+  <!-- Page 2 -->
+  <div id="antre" class="hidden">
+    <div class="title">
+      MÒPYON PA YON JWÈT AZA.<br/>SE PÈFÒMANS OU KAP FÈW GENYEN AK FÈ LAJAN.
+    </div>
+    <button class="button" onclick="showPage('page3')">Antre san kont</button>
+    <button class="button" onclick="showLoginModal()">Konekte</button>
+    <button class="button" onclick="showRegisterModal()">Kreye kont</button>
+  </div>
+  <!-- Page 3 -->
+  <div id="page3" class="hidden page3-container">
+    <header>
+      <button class="nav-button" onclick="toggleMenu(true)">Menu</button>
+      <div class="logo">Mòpyon</div>
+      <button class="nav-button" onclick="showProfile()">Pwofil</button>
+    </header>
+
+    <main>
+      <button class="button" onclick="handlePlayClick()">Jwe</button>
+      <button class="button" onclick="showTrainingPage()">Antrene</button>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Mòpyon. Tout dwa rezève.</p>
+    </footer>
+
+    <!-- Menu modal -->
+    <div class="menu-modal" id="menuModal">
+      <div class="menu-content">
+        <button class="button" onclick="showPage('page3'); toggleMenu(false)">Paj prensipal</button>
+        <button class="button" onclick="showProfile(); toggleMenu(false)">Pwofil</button>
+        <button class="button" onclick="showTrainingPage(); toggleMenu(false)">Antrene</button>
+        <button class="button" onclick="showLearnPage(); toggleMenu(false)">Aprann jwe</button>
+        <button class="button" onclick="showAboutPage(); toggleMenu(false)">Kisa Mòpyon ye ?</button>
+        <button class="close-button" onclick="toggleMenu(false)">Fèmen</button>
+      </div>
+    </div>
+
+    <!-- Jwe alert modal -->
+    <div class="alert-modal" id="alertModal">
+      <div class="alert-content">
+        <p>Tanpri konekte oswa kreye kont pou jwe.</p>
+        <button class="button" onclick="showLoginModal(); toggleAlert(false)">Konekte</button>
+        <button class="button" onclick="showRegisterModal(); toggleAlert(false)">Kreye kont</button>
+        <button class="close-button" onclick="toggleAlert(false)">Fèmen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="login-modal" id="loginModal">
+    <div class="login-content">
+      <div class="form-title">Konekte</div>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail">Adres imèl</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Modpas</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="form-button">Konekte</button>
+        <a class="form-link" onclick="alert('Fonksyon bliye modpas ap vini byento!')">Ou bliye modpas ou?</a>
+        <a class="form-link" onclick="showRegisterModal(); hideLoginModal()">Ou pa gen kont? Kreye youn</a>
+      </form>
+      <button class="close-button" onclick="hideLoginModal()">Fèmen</button>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div class="register-modal" id="registerModal">
+    <div class="register-content">
+      <div class="form-title">Kreye Kont</div>
+      <form onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label for="registerName">Non</label>
+          <input type="text" id="registerName" required>
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">Adres imèl</label>
+          <input type="email" id="registerEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">Modpas</label>
+          <input type="password" id="registerPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Konfime modpas</label>
+          <input type="password" id="confirmPassword" required>
+        </div>
+        <button type="submit" class="form-button">Kreye kont</button>
+        <a class="form-link" onclick="showLoginModal(); hideRegisterModal()">Ou gen kont deja? Konekte</a>
+      </form>
+      <button class="close-button" onclick="hideRegisterModal()">Fèmen</button>
+    </div>
+  </div>
+
+  <!-- Profile Page -->
+  <div id="profilePage" class="hidden">
+    <header>
+      <div></div>
+      <div class="logo">Mòpyon</div>
+      <button class="nav-button" onclick="hideProfile()">Fèmen</button>
+    </header>
+
+    <main>
+      <div class="money-container">
+        <div>
+          <div>Lajan ou:</div>
+          <div class="money-amount">$1,250.00</div>
+        </div>
+        <button class="add-money-btn" onclick="showDepositWithdraw()">+</button>
+      </div>
+
+      <div class="player-info">
+        <div class="player-name">Jan Jouè</div>
+        <div class="player-elo">Elo: 1847</div>
+      </div>
+
+      <div class="tabs-container">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('estatistik')">Estatistik</button>
+          <button class="tab" onclick="switchTab('transaksyon')">Transaksyon</button>
+        </div>
+
+        <div id="estatistikContent" class="tab-content">
+          <h3>Estatistik Jwè</h3>
+          <p>Kantite Pati: 45</p>
+          <p>Viktwa: 32</p>
+          <p>Defèt: 13</p>
+          <p>Pousantaj viktwa: 71%</p>
+          <p>10 dènye pati: V-V-D-V-V-D-V-V-V-D</p>
+        </div>
+
+        <div id="transaksyonContent" class="tab-content hidden">
+          <h3>Istwa Transaksyon</h3>
+          <p>26/07/2025 - Depo: +$500.00</p>
+          <p>25/07/2025 - Jwèt genyen: +$150.00</p>
+          <p>24/07/2025 - Jwèt pèdi: -$75.00</p>
+          <p>23/07/2025 - Depo: +$300.00</p>
+          <p>22/07/2025 - Retire: -$200.00</p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Mòpyon. Tout dwa rezève.</p>
+    </footer>
+  </div>
+
+  <!-- Training Page -->
+  <div id="trainingPage" class="hidden">
+    <header>
+      <div></div>
+      <div class="logo">Mòpyon - Antrene</div>
+      <button class="nav-button" onclick="hideTrainingPage()">Fèmen</button>
+    </header>
+
+    <main>
+      <button class="button" onclick="startSoloTraining()">Antrene poukont ou</button>
+       <button class="button" onclick="window.location.href='Izana.html'">Antrene ak Robo (Izana)</button>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Mòpyon. Tout dwa rezève.</p>
+    </footer>
+  </div>
+
+  <!-- Solo Training Game -->
+  <div id="soloGamePage" class="game-page hidden">
+    <div class="game-header">
+      <button class="nav-button" id="soloMenuButton">Menu</button>
+      <div class="logo">Mòpyon</div>
+      <button class="nav-button" onclick="hideSoloGame()">Fèmen</button>
+    </div>
+
+    <div id="soloBoard" class="game-board"></div>
+    <div id="soloCountdown" class="game-countdown"></div>
+
+    <!-- Solo Game Menu Modal -->
+    <div class="modal" id="soloMenuModal">
+      <div class="modal-content">
+        <button class="button" onclick="restartSoloGame()">Rejwe</button>
+        <button class="button" onclick="showPage('page3'); hideSoloGame(); toggleMenu(false)">Paj prensipal</button>
+        <button class="button" onclick="soloMenuModal.style.display='none'">Fèmen</button>
+      </div>
+    </div>
+
+    <!-- Solo Game End Modal -->
+    <div class="modal" id="soloEndModal">
+      <div class="modal-content">
+        <p id="soloWinnerText"></p>
+        <button class="button" onclick="restartSoloGame()">Rejwe</button>
+        <button class="button" onclick="showPage('page3'); hideSoloGame()">Paj prensipal</button>
+        <button class="button" onclick="soloEndModal.style.display='none'">Fèmen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learn Page -->
+  <div id="learnPage" class="info-page hidden">
+    <header>
+      <div></div>
+      <div class="logo">Mòpyon - Aprann Jwe</div>
+      <button class="nav-button" onclick="hideLearnPage()">Fèmen</button>
+    </header>
+
+    <main>
+      <div class="info-content">
+        <h2>RÈG JWÈT LA</h2>
+        
+        <p>2 jwè ap jwe sou yon tablo 15x15.</p>
+        
+        <p>Chak jwè mete yon siy (O oswa X).</p>
+        
+        <p>Premye ki mete 5 youn apre lòt (orizontal, vètikal oswa dyagonal) genyen.</p>
+        
+        <p>Ou gen 15 segonn pou chak kou. Si ou kite tan an fini san w pa jwe, ou pèdi.</p>
+        
+        <p>Depi pati a fini a egalite, yon lòt pati ap relanse otomatikman.</p>
+
+        <h3>KIJAN MÒPYON MACHE</h3>
+        
+        <p>Chak jwè mete yon miz (egzanp: 100 Gdes).</p>
+        
+        <p>Jwè ki genyen an pran total miz pati a (200 Gdes) - mwens 5 Gdes kòm komsisyon.</p>
+        
+        <p>Kidonk a chak fwa ou genyen se a chak fwa ou fè lajan. Plis ou jwe se plis ou fè lajan.</p>
+        
+        <p>Chak jwè mòpyon sou sit sa se yon jwè enpòtan paske nou se yon kominote jwè ki ka vin pwofesyonèl. Mòpyon pap sèlman yon jwèt men lap yon fason pou w fè lajan chak jou.</p>
+        
+        <p>Ou ka depoze oswa retire lajan sou kont ou.</p>
+        
+        <p>Chak viktwa ba ou 5 pwen ELO; chak defèt wete 5 pwen.</p>
+        
+        <p>Gras ak sistèm Elo a, jwè yo ap toujou jwe ak jwè ki nan menm nivo ak yo (egzanp yon jwè ki nan 500 Elo pap janm jwe ak yon jwè 600, 700 Elo)</p>
+        
+        <p>Ou ka antrene w poukont ou oswa ak yon robo pou w aprann jwe oswa vin pi fò.</p>
+        
+        <p>Wap gen pou w peye yon abònman 125 goud sèlman chak mwa pou w ka jwe. San abònman an ou pap ka jwe.</p>
+        
+        <p>5 premye pati chak nouvo itilizatè yo gratis san abònman.</p>
+
+        <a href="https://www.youtube.com/@m%C3%B2pyon.509" target="_blank" class="youtube-link">
+          📺 Gade videyo nan YouTube
+        </a>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Mòpyon. Tout dwa rezève.</p>
+    </footer>
+  </div>
+
+  <!-- About Page -->
+  <div id="aboutPage" class="info-page hidden">
+    <header>
+      <div></div>
+      <div class="logo">Kisa Mòpyon Ye</div>
+      <button class="nav-button" onclick="hideAboutPage()">Fèmen</button>
+    </header>
+
+    <main>
+      <div class="info-content">
+        <h2>KISA MÒPYON YE ?</h2>
+        
+        <p>Mòpyon se yon jwèt estrateji kote ou ka jwe ak entèlijans ou pou w genyen.</p>
+        
+        <p>Se pa aza, men kapasite ak refleksyon ki ap fè diferans lan.</p>
+        
+        <p>Platfòm lan pèmèt ou mete lajan pou chak pati, epi si ou genyen, ou fè pwofi.</p>
+        
+        <p>Li fasil pou itilize, sekirize, epi fèt pou tout moun ki renmen jwe e reflechi.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Mòpyon. Tout dwa rezève.</p>
+    </footer>
+  </div>
+
+<!-- Subscription Modal -->
+<div class="subscription-modal" id="subscriptionModal">
+  <div class="subscription-content">
+    <div class="subscription-title">Abonman Obligatwa</div>
+    <p>Ou gen deja jwe 5 pati gratis ou yo!</p>
+    <p>Pou jwe Mòpyon, ou dwe gen yon abonman aktif.</p>
+    
+    <div class="subscription-price">500 Gdes/mwa</div>
+    
+    <ul class="subscription-benefits">
+      <li>Aksè konplè nan tout jwèt yo</li>
+      <li>Jwe san limit</li>
+      <li>Sipò 24/7</li>
+      <li>Nouvo fonksyon yo an premye</li>
+    </ul>
+    
+    <button class="form-button" onclick="processSubscriptionPayment()">Peye Abonman</button>
+    <button class="close-button" onclick="hideSubscriptionModal()">Fèmen</button>
+  </div>
+</div>
+
+<!-- Subscription Modal -->
+<div class="subscription-modal" id="subscriptionModal">
+  <div class="subscription-content">
+    <div class="subscription-title">Abonman Obligatwa</div>
+    <p>Pou jwe Mòpyon, ou dwe gen yon abonman aktif.</p>
+    
+    <div class="subscription-price">500 Gdes/mwa</div>
+    
+    <ul class="subscription-benefits">
+      <li>Aksè konplè nan tout jwèt yo</li>
+      <li>Jwe san limit</li>
+      <li>Sipò 24/7</li>
+      <li>Nouvo fonksyon yo an premye</li>
+    </ul>
+    
+    <button class="form-button" onclick="processSubscriptionPayment()">Peye Abonman</button>
+    <button class="close-button" onclick="hideSubscriptionModal()">Fèmen</button>
+  </div>
+</div>
+<button style="display:none" onclick="testeFirestore()" id="testBtn">Test Firestore</button>
+
+</body>
+</html>

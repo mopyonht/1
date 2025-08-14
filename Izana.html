@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gomoku – Izana</title>
+<style>
+  /* === Ta charte de base (reprend ton CSS) === */
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #333;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, red, blue);
+    gap: 15px;
+  }
+  .nav-button {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+    padding: 5px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .logo {
+    font-family: 'Sergi Trendy', Arial, sans-serif;
+    font-size: 28px;
+    font-weight: bold;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #game-info {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 500px;
+    margin: 10px auto;
+  }
+  .player-info {
+    text-align: center;
+  }
+  #timer {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 5px;
+  }
+  #board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    gap: 2px;
+    width: 90vmin;
+    height: 90vmin;
+    max-width: 92vw;
+    max-height: 92vw;
+    margin-top: 10px;
+    touch-action: manipulation;
+  }
+  .cell {
+    background-color: #222;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4vmin;
+    font-weight: bold;
+    border: 1px solid #666;
+    user-select: none;
+    cursor: pointer;
+  }
+  .cell.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .cell.highlight {
+    outline: 2px solid rgba(255,255,255,0.35);
+    box-shadow: 0 0 0 3px rgba(255,0,0,0.25) inset;
+  }
+  .modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    background-color: white;
+    color: red;
+    padding: 24px 20px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 280px;
+    max-width: 420px;
+  }
+  .modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 4px;
+    color: #333;
+  }
+  .modal-content p.sub {
+    margin: 0 0 12px 0;
+    color: #555;
+    font-weight: bold;
+  }
+  .modal-content .button {
+    color: red;
+    margin: 10px 0;
+    width: 100%;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+    padding: 10px;
+    font-weight: bold;
+    background-color: #fff;
+    cursor: pointer;
+    border-left: none;
+    border-right: none;
+  }
+  .modal-content .button:hover {
+    background-color: #f0f0f0;
+  }
+  .difficulty-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 14px 0 6px 0;
+  }
+  .difficulty-btn {
+    padding: 12px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    color: #333;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+  }
+  .difficulty-btn:hover {
+    border-color: red;
+    background-color: #ffe6e6;
+  }
+  .difficulty-btn.selected {
+    border-color: red;
+    background-color: red;
+    color: white;
+  }
+  .difficulty-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .difficulty-title span.tiny {
+    font-size: 12px;
+    opacity: .9;
+  }
+
+  .mode-selection {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    color: #333;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .mode-btn:hover {
+    border-color: blue;
+    background-color: #e6f3ff;
+  }
+
+  /* Petites pastilles joueur */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid #666;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    font-weight: bold;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: white; border: 1px solid #999;
+  }
+  .dot.human { background: #ff4d4d; border-color: #c33; } /* rouge */
+  .dot.ai { background: #4d79ff; border-color: #335; }     /* bleu */
+
+  /* Boutons secondaires sur header */
+  .ghost {
+    border-color: rgba(255,255,255,0.6);
+    color: white;
+    background: transparent;
+  }
+  .ghost:hover {
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* Fin de partie */
+  .end-title { color: #333; margin-bottom: 2px; }
+  .end-who { color: #555; margin-top: 0; margin-bottom: 16px; font-weight: bold; }
+  .end-actions { display: grid; gap: 8px; }
+  
+  @media (max-width: 600px) {
+  header {
+    flex-direction: row; /* garde les éléments sur une ligne */
+    justify-content: space-between; /* boutons à gauche, logo centré */
+    align-items: center;
+    padding: 10px;
+  }
+
+  .nav-container {
+    display: flex;
+    gap: 10px;
+  }
+
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .nav-button {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+  
+</style>
+</head>
+<body>
+  <header>
+    
+    <button class="nav-button ghost" id="newGameBtn">Rekòmanse pati a</button>
+    <button class="nav-button ghost" id="levelBtn">Nivo</button>
+    <div class="logo">Mòpyon</div>
+  </header>
+
+  <div id="game-info">
+    <div class="player-info">
+      <div class="badge"><span class="dot human"></span> Toi (X)</div>
+    </div>
+    <div id="timer">—</div>
+    <div class="player-info">
+      <div class="badge"><span class="dot ai"></span> Izana (O)</div>
+    </div>
+  </div>
+
+  <div id="board" aria-label="Plateau Gomoku" role="grid"></div>
+
+  <!-- Modal de sélection de niveau -->
+  <div class="modal" id="levelModal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="levelTitle">
+      <h2 id="levelTitle">Chwazi nivo Izana</h2>
+      <p class="sub">Gen 6 nivo, debitan jiska gran mèt</p>
+      <div class="difficulty-buttons" id="difficultyList">
+        <!-- Boutons injectés par JS -->
+      </div>
+      <button class="button" id="confirmLevelBtn">Kòmanse pati a</button>
+      <button class="button" id="cancelLevelBtn" style="color:#555">Fèmen</button>
+    </div>
+  </div>
+
+  <!-- Modal de fin de partie -->
+  <div class="modal" id="endModal">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <h2 class="end-title" id="endTitle">Pati a fini</h2>
+      <p class="end-who" id="endWho"></p>
+      <div class="end-actions">
+        <button class="button" id="playAgainBtn">Rejwe (menm nivo)</button>
+        <button class="button" id="changeLevelBtn">Chanje nivo</button>
+        <button class="button" id="closeEndBtn" style="color:#555">Fèmen</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ==========================
+  //   Paramètres & constantes
+  // ==========================
+  const SIZE = 15;
+  const HUMAN = 1;   // X
+  const AI = -1;     // O
+  const WIN_LEN = 5;
+
+  // Configuration des 6 niveaux (Elo approximatif indicatif)
+  const LEVELS = [
+    { id: 1, name: "Nivo 1 — Debitan",    hint:"Elo ~700–900",   depth: 1, maxCand: 6, noise: 0.20, nearDist: 2 },
+    { id: 2, name: "Nivo 2 — Novis",      hint:"Elo ~1000–1200", depth: 2, maxCand: 8, noise: 0.12, nearDist: 2 },
+    { id: 3, name: "Nivo 3 — Entèmedyè",hint:"Elo ~1200–1400",depth: 3, maxCand: 10, noise: 0.06, nearDist: 2 },
+    { id: 4, name: "Nivo 4 — Mèt",        hint:"Elo ~1400–1600", depth: 4, maxCand: 12, noise: 0.00, nearDist: 2 },
+    { id: 5, name: "Nivo 5 — Mèt avanse",      hint:"Elo ~1700–1900", depth: 5, maxCand: 14, noise: 0.00, nearDist: 2 },
+    { id: 6, name: "Nivo 6 — Gran mèt",      hint:"Elo 2000+",      depth: 6, maxCand: 16, noise: 0.00, nearDist: 2 },
+  ];
+
+  // ==========================
+  //          État
+  // ==========================
+  let board = makeBoard(SIZE);
+  let currentPlayer = HUMAN;
+  let gameOver = false;
+  let selectedLevel = LEVELS[3]; // défaut: Niveau 4 – Fort
+  let lastMoveIdx = null;
+  let startTime = null;
+  let timerInterval = null;
+
+  // ==========================
+  //          UI
+  // ==========================
+  const boardEl = document.getElementById('board');
+  const levelModal = document.getElementById('levelModal');
+  const endModal = document.getElementById('endModal');
+  const endWho = document.getElementById('endWho');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const levelBtn = document.getElementById('levelBtn');
+  const confirmLevelBtn = document.getElementById('confirmLevelBtn');
+  const cancelLevelBtn = document.getElementById('cancelLevelBtn');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const changeLevelBtn = document.getElementById('changeLevelBtn');
+  const closeEndBtn = document.getElementById('closeEndBtn');
+  const timerEl = document.getElementById('timer');
+
+  // Injecte les boutons de niveaux dans la modale
+  const diffList = document.getElementById('difficultyList');
+  let selectedLevelId = selectedLevel.id;
+  LEVELS.forEach(cfg => {
+    const btn = document.createElement('button');
+    btn.className = 'difficulty-btn' + (cfg.id === selectedLevelId ? ' selected' : '');
+    btn.dataset.levelId = cfg.id;
+    btn.innerHTML = `
+      <div class="difficulty-title">
+        <span>${cfg.name}</span>
+        <span class="tiny">${cfg.hint}</span>
+      </div>
+      <div class="tiny">Profondeur ${cfg.depth}, candidats ${cfg.maxCand}${cfg.noise>0?`, bruit ${Math.round(cfg.noise*100)}%`:''}</div>
+    `;
+    btn.addEventListener('click', () => {
+      selectedLevelId = cfg.id;
+      Array.from(diffList.children).forEach(c => c.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    diffList.appendChild(btn);
+  });
+
+  function openLevelModal() {
+    levelModal.classList.add('open');
+    levelModal.setAttribute('aria-hidden', 'false');
+  }
+  function closeLevelModal() {
+    levelModal.classList.remove('open');
+    levelModal.setAttribute('aria-hidden', 'true');
+  }
+  function openEndModal(msg) {
+    endWho.textContent = msg || '';
+    endModal.classList.add('open');
+  }
+  function closeEndModal() {
+    endModal.classList.remove('open');
+  }
+
+  newGameBtn.addEventListener('click', () => {
+    resetGame();
+    // On relance la modale pour éventuellement confirmer le même niveau
+    openLevelModal();
+  });
+  levelBtn.addEventListener('click', openLevelModal);
+  confirmLevelBtn.addEventListener('click', () => {
+    selectedLevel = LEVELS.find(x => x.id === selectedLevelId) || selectedLevel;
+    closeLevelModal();
+    resetGame(true);
+  });
+  cancelLevelBtn.addEventListener('click', () => closeLevelModal());
+
+  playAgainBtn.addEventListener('click', () => {
+    closeEndModal();
+    resetGame(true);
+  });
+  changeLevelBtn.addEventListener('click', () => {
+    closeEndModal();
+    openLevelModal();
+  });
+  closeEndBtn.addEventListener('click', closeEndModal);
+
+  // ==========================
+  //      Initialisation
+  // ==========================
+  buildBoardUI();
+  openLevelModal();
+
+  // ==========================
+  //     Construction UI
+  // ==========================
+  function buildBoardUI() {
+    boardEl.innerHTML = '';
+    boardEl.style.gridTemplateColumns = `repeat(${SIZE}, 1fr)`;
+    boardEl.style.gridTemplateRows = `repeat(${SIZE}, 1fr)`;
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.role = 'gridcell';
+      cell.dataset.index = i;
+      cell.addEventListener('click', onCellClick);
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function renderBoard() {
+    const children = boardEl.children;
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const x = Math.floor(i / SIZE);
+      const y = i % SIZE;
+      const v = board[x][y];
+      const el = children[i];
+      el.classList.remove('disabled','highlight');
+      if (v === HUMAN) {
+        el.textContent = 'X';
+        el.style.color = '#ffb3b3';
+      } else if (v === AI) {
+        el.textContent = 'O';
+        el.style.color = '#b3c4ff';
+      } else {
+        el.textContent = '';
+      }
+    }
+    if (lastMoveIdx != null) {
+      children[lastMoveIdx].classList.add('highlight');
+    }
+    const disabled = gameOver || currentPlayer === AI;
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      if (disabled) children[i].classList.add('disabled');
+      else children[i].classList.remove('disabled');
+    }
+  }
+
+  // ==========================
+  //       Gestion partie
+  // ==========================
+  function resetGame(startImmediately=false) {
+    board = makeBoard(SIZE);
+    currentPlayer = HUMAN;
+    gameOver = false;
+    lastMoveIdx = null;
+    stopTimer();
+    timerEl.textContent = '—';
+    renderBoard();
+    if (startImmediately) {
+      startTimer();
+    }
+  }
+
+  function onCellClick(e) {
+    if (gameOver || currentPlayer !== HUMAN) return;
+    const idx = Number(e.currentTarget.dataset.index);
+    const x = Math.floor(idx / SIZE);
+    const y = idx % SIZE;
+    if (board[x][y] !== 0) return;
+
+    makeMove(x, y, HUMAN);
+    lastMoveIdx = idx;
+    renderBoard();
+
+    const res = checkEnd(x, y, HUMAN);
+    if (res) return;
+
+    // Tour d'Izana
+    currentPlayer = AI;
+    renderBoard();
+    setTimeout(() => {
+      const {x: ax, y: ay} = izanaMove();
+      makeMove(ax, ay, AI);
+      lastMoveIdx = ax * SIZE + ay;
+      renderBoard();
+      const res2 = checkEnd(ax, ay, AI);
+      if (res2) return;
+      currentPlayer = HUMAN;
+      renderBoard();
+    }, 30); // petit délai pour respirer
+  }
+
+  function makeMove(x, y, side) {
+    board[x][y] = side;
+    if (!startTime) startTimer();
+  }
+
+  function startTimer() {
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+      const s = Math.floor((Date.now()-startTime)/1000);
+      const m = Math.floor(s/60);
+      const ss = (s%60).toString().padStart(2,'0');
+      timerEl.textContent = `${m}:${ss}`;
+    }, 250);
+  }
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    startTime = null;
+  }
+
+  function checkEnd(x, y, side) {
+    if (isWinFrom(x, y, side)) {
+      gameOver = true;
+      stopTimer();
+      openEndModal(side === HUMAN ? "Ou genyen ! 🎉" : "Izana genyen. 🤖");
+      return true;
+    }
+    if (isBoardFull(board)) {
+      gameOver = true;
+      stopTimer();
+      openEndModal("Match nul.");
+      return true;
+    }
+    return false;
+  }
+
+  // ==========================
+  //       IA IZANA (Gomoku)
+  // ==========================
+  function izanaMove() {
+    // 1) coups immédiats gagnants ou blocages critiques
+    const win = findImmediateWin(AI);
+    if (win) return win;
+    const block = findImmediateWin(HUMAN);
+    if (block) return block;
+
+    // 2) recherche principale negamax + alpha-beta
+    const cfg = selectedLevel;
+    const cand = generateCandidates(board, cfg.nearDist, cfg.maxCand);
+    // si pas de candidats (début de partie) -> centre
+    if (cand.length === 0) {
+      const c = Math.floor(SIZE/2);
+      return {x: c, y: c};
+    }
+
+    let bestScore = -Infinity;
+    let best = cand[0];
+    const alphaInit = -Infinity;
+    const betaInit = Infinity;
+
+    for (const {x,y} of cand) {
+      board[x][y] = AI;
+      const sc = -negamax(cfg.depth-1, alphaInit, betaInit, HUMAN, cfg);
+      board[x][y] = 0;
+
+      const noisy = sc + noise(cfg.noise);
+      if (noisy > bestScore) {
+        bestScore = noisy;
+        best = {x,y};
+      }
+    }
+    return best;
+  }
+
+  function negamax(depth, alpha, beta, side, cfg) {
+    // Terminal: victoire rapide / nul / profondeur
+    const terminalScore = terminalEval(side);
+    if (terminalScore !== null) return terminalScore;
+
+    if (depth <= 0) {
+      return heuristic(board, AI) - heuristic(board, HUMAN);
+    }
+
+    let best = -Infinity;
+    const cand = generateCandidates(board, cfg.nearDist, cfg.maxCand);
+
+    // Move ordering simple: évalue rapidement chaque coup (1 ply)
+    const scored = cand.map(m => {
+      board[m.x][m.y] = side;
+      const sc = quickLocalScore(m.x, m.y, side);
+      board[m.x][m.y] = 0;
+      return { ...m, score: sc };
+    }).sort((a,b) => b.score - a.score);
+
+    for (const m of scored) {
+      board[m.x][m.y] = side;
+      const val = -negamax(depth-1, -beta, -alpha, -side, cfg);
+      board[m.x][m.y] = 0;
+
+      if (val > best) best = val;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break; // coupure alpha-beta
+    }
+    return best;
+  }
+
+  function terminalEval(sideToMove) {
+    // Vérifie si le dernier coup a créé une ligne gagnante pour l'un ou l'autre
+    // Comme on ne garde pas systématiquement le dernier, on fait une passe rapide :
+    if (hasWin(board, AI)) return 1_000_000;     // grande valeur positive pour IA
+    if (hasWin(board, HUMAN)) return -1_000_000; // grande valeur négative pour IA
+    if (isBoardFull(board)) return 0;
+    return null;
+  }
+
+  // ==========================
+  //     Génération de coups
+  // ==========================
+  function generateCandidates(b, nearDist=2, maxCand=12) {
+    const N = b.length;
+    const hasStone = [];
+    for (let x=0; x<N; x++) {
+      for (let y=0; y<N; y++) {
+        if (b[x][y] !== 0) hasStone.push({x,y});
+      }
+    }
+    const set = new Set();
+    if (hasStone.length === 0) return []; // centre géré plus haut
+
+    for (const s of hasStone) {
+      for (let dx=-nearDist; dx<=nearDist; dx++) {
+        for (let dy=-nearDist; dy<=nearDist; dy++) {
+          const nx = s.x + dx, ny = s.y + dy;
+          if (nx<0 || ny<0 || nx>=N || ny>=N) continue;
+          if (b[nx][ny] !== 0) continue;
+          set.add(nx + ',' + ny);
+        }
+      }
+    }
+    const candidates = Array.from(set).map(str => {
+      const [x,y] = str.split(',').map(Number);
+      // Score local simple pour prioriser (menaces ouvertes, proximité centre)
+      const attack = localPatternScore(x,y, AI);
+      const defend = localPatternScore(x,y, HUMAN) * 0.9;
+      const centerBias = - (Math.abs(x - Math.floor(N/2)) + Math.abs(y - Math.floor(N/2)));
+      return {x,y, s: attack + defend + 0.1*centerBias};
+    }).sort((a,b) => b.s - a.s);
+
+    return candidates.slice(0, maxCand).map(({x,y}) => ({x,y}));
+  }
+
+  // Cherche une victoire en 1 pour side
+  function findImmediateWin(side) {
+    const cand = generateCandidates(board, 1, 64);
+    for (const {x,y} of cand) {
+      board[x][y] = side;
+      const win = isWinFrom(x, y, side);
+      board[x][y] = 0;
+      if (win) return {x,y};
+    }
+    return null;
+  }
+
+  // ==========================
+  //     Heuristiques & motifs
+  // ==========================
+  function heuristic(b, sideRef) {
+    // score = attaque(IA) - attaque(HUMAN), appelé en perspective de l'IA
+    const atkAI = globalPatternScore(AI);
+    const atkH  = globalPatternScore(HUMAN);
+    return atkAI - atkH * 1.02; // léger biais pro-défense
+  }
+
+  // Score rapide du coup pour move ordering
+  function quickLocalScore(x,y, side) {
+    const before = localPatternScoreAround(x,y, side);
+    board[x][y] = side;
+    const after = localPatternScoreAround(x,y, side);
+    board[x][y] = 0;
+    return after - before;
+  }
+
+  function globalPatternScore(side) {
+    let s = 0;
+    // On parcourt tout le plateau, mais on regarde seulement des lignes
+    for (let x=0; x<SIZE; x++) {
+      for (let y=0; y<SIZE; y++) {
+        if (board[x][y] === side) {
+          s += scorePoint(x,y,side);
+        }
+      }
+    }
+    return s;
+  }
+
+  function localPatternScore(x,y, side) {
+    // Score si on jouait ici (sans modifier le plateau)
+    let s = 0;
+     // On simule localement sans inscrire sur board pour rester rapide
+    // Approche: compter les alignements potentiels ouverts depuis (x,y)
+    s += potentialLineScore(x,y,side, 1,0);
+    s += potentialLineScore(x,y,side, 0,1);
+    s += potentialLineScore(x,y,side, 1,1);
+    s += potentialLineScore(x,y,side, 1,-1);
+    return s;
+  }
+
+  function localPatternScoreAround(x,y, side) {
+    // Évalue la zone autour d'une case
+    let s = 0;
+    for (const [dx,dy] of [[1,0],[0,1],[1,1],[1,-1]]) {
+      s += potentialLineScore(x,y,side, dx,dy);
+      s += potentialLineScore(x,y,side, -dx,-dy);
+    }
+    return s;
+  }
+
+  function scorePoint(x,y,side) {
+    // Score en regardant 4 directions
+    let s = 0;
+    s += lineValue(x,y,side, 1,0);
+    s += lineValue(x,y,side, 0,1);
+    s += lineValue(x,y,side, 1,1);
+    s += lineValue(x,y,side, 1,-1);
+    return s;
+  }
+
+  function lineValue(x,y,side, dx,dy) {
+    // Compte la plus longue chaîne passant par (x,y) dans (dx,dy)
+    const cnt1 = countContiguous(x,y,side, dx,dy);
+    const cnt2 = countContiguous(x,y,side, -dx,-dy);
+    const len = cnt1 + cnt2 - 1;
+    if (len >= WIN_LEN) return 200000; // énorme si cinq
+    // Ouvertures aux extrémités
+    const open1 = isOpenEnd(x,y,side, dx,dy, cnt1);
+    const open2 = isOpenEnd(x,y,side, -dx,-dy, cnt2);
+    const openEnds = (open1?1:0) + (open2?1:0);
+
+    // Barème simple
+    const base = [0, 2, 8, 50, 200][Math.min(len,4)] || 0;
+    const mult = [0, 1, 2, 6][Math.min(openEnds,3)] || 0;
+    return base * mult;
+  }
+
+  function potentialLineScore(x,y,side, dx,dy) {
+    // estime de potentiel si on pose ici (x,y)
+    let cnt = 1; // inclut la pierre potentielle
+    let open = 0;
+
+    // avant
+    let xx = x+dx, yy = y+dy;
+    while (onBoard(xx,yy) && board[xx][yy] === side) { cnt++; xx+=dx; yy+=dy; }
+    if (onBoard(xx,yy) && board[xx][yy] === 0) open++;
+
+    // après
+    xx = x-dx; yy = y-dy;
+    while (onBoard(xx,yy) && board[xx][yy] === side) { cnt++; xx-=dx; yy-=dy; }
+    if (onBoard(xx,yy) && board[xx][yy] === 0) open++;
+
+    if (cnt >= WIN_LEN) return 150000;
+    // Favorise 4 ouverts / 3 ouverts
+    if (cnt === 4 && open === 2) return 30000;
+    if (cnt === 4 && open === 1) return 8000;
+    if (cnt === 3 && open === 2) return 2500;
+    if (cnt === 3 && open === 1) return 600;
+    if (cnt === 2 && open === 2) return 180;
+    if (cnt === 2 && open === 1) return 60;
+    return 8 * open;
+  }
+
+  function countContiguous(x,y,side, dx,dy) {
+    let c=0, xx=x, yy=y;
+    while (onBoard(xx,yy) && board[xx][yy] === side) { c++; xx+=dx; yy+=dy; }
+    return c;
+  }
+
+  function isOpenEnd(x,y,side, dx,dy, countForward) {
+    // position après la chaîne
+    let xx=x, yy=y;
+    for (let i=0;i<countForward;i++){ xx+=dx; yy+=dy; }
+    return onBoard(xx,yy) && board[xx][yy] === 0;
+  }
+
+  // ==========================
+  //     Vérifications victoire
+  // ==========================
+  function hasWin(b, side) {
+    for (let x=0; x<SIZE; x++) {
+      for (let y=0; y<SIZE; y++) {
+        if (b[x][y] !== side) continue;
+        if (isWinFrom(x,y,side)) return true;
+      }
+    }
+    return false;
+  }
+
+  function isWinFrom(x,y,side) {
+    // 4 directions
+    return (
+      countDir(x,y,side, 1,0) + countDir(x,y,side, -1,0) - 1 >= WIN_LEN ||
+      countDir(x,y,side, 0,1) + countDir(x,y,side, 0,-1) - 1 >= WIN_LEN ||
+      countDir(x,y,side, 1,1) + countDir(x,y,side, -1,-1) - 1 >= WIN_LEN ||
+      countDir(x,y,side, 1,-1) + countDir(x,y,side, -1,1) - 1 >= WIN_LEN
+    );
+  }
+
+  function countDir(x,y,side, dx,dy) {
+    let c=0, xx=x, yy=y;
+    while (onBoard(xx,yy) && board[xx][yy] === side) { c++; xx+=dx; yy+=dy; }
+    return c;
+  }
+
+  // ==========================
+  //         Utilitaires
+  // ==========================
+  function makeBoard(n) {
+    return Array.from({length:n}, () => Array(n).fill(0));
+  }
+  function onBoard(x,y) {
+    return x>=0 && y>=0 && x<SIZE && y<SIZE;
+  }
+  function isBoardFull(b) {
+    for (let i=0;i<SIZE;i++) for (let j=0;j<SIZE;j++) if (b[i][j]===0) return false;
+    return true;
+  }
+  function noise(level) {
+    if (!level) return 0;
+    // bruit dans [-level*100, +level*100] (échelle faible vs scores)
+    return (Math.random()*2-1) * (100 * level);
+  }
+
+})();
+
+</script>
+</body>
+</html>
